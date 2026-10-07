@@ -49,7 +49,6 @@ setup(
     extras_require={'test': ['pytest']},
     entry_points={
         'console_scripts': [
-            'limo_odometry = webots_ros2_limo.limo_odometry:main',
         ],
     },
 )

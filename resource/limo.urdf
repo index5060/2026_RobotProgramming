@@ -1,29 +1,17 @@
 <?xml version="1.0" ?>
 <robot name="LIMO">
     <webots>
-        <device reference="laser" type="Lidar">
-            <ros>
-                <enabled>true</enabled>
-                <updateRate>10</updateRate>
-                <topicName>/scan</topicName>
-                <alwaysOn>false</alwaysOn>
-                <frameName>laser_link</frameName>
-            </ros>
-        </device>
+        <!-- Turn off the driver's automatic /LIMO/<device> topics: the plugin below
+             publishes the real robot's topics instead. -->
+        <device reference="laser"><ros><enabled>false</enabled></ros></device>
+        <device reference="rgb_camera"><ros><enabled>false</enabled></ros></device>
+        <device reference="depth_camera"><ros><enabled>false</enabled></ros></device>
+        <device reference="ir_camera"><ros><enabled>false</enabled></ros></device>
+        <device reference="imu compass"><ros><enabled>false</enabled></ros></device>
 
-        <!-- Same plugin and settings as the official webots_ros2_turtlebot URDF
-             (only the Webots device names differ because the LimoFourDiff proto
-             names them differently). -->
-        <plugin type="webots_ros2_driver::Ros2IMU">
-            <enabled>true</enabled>
-            <updateRate>20</updateRate>
-            <topicName>/imu</topicName>
-            <alwaysOn>false</alwaysOn>
-            <frameName>imu_link</frameName>
-            <inertialUnitName>imu inertial</inertialUnitName>
-            <gyroName>imu gyro</gyroName>
-            <accelerometerName>imu accelerometer</accelerometerName>
-        </plugin>
+        <!-- /scan, /imu and all /camera/* topics, published with the same names, types,
+             frames, rates and QoS as the real LIMO (see webots_ros2_limo/limo_sensors.py). -->
+        <plugin type="webots_ros2_limo.limo_sensors.LimoSensors" />
 
         <plugin type="webots_ros2_control::Ros2Control" />
     </webots>

@@ -26,7 +26,7 @@ WorldInfo {
     "AgileX LIMO in the Cyberbotics webots_ros2_turtlebot apartment world."
   ]
   title "ROS2 simulation of the AgileX LIMO robot"
-  basicTimeStep 20
+  basicTimeStep 10
   contactProperties [
     ContactProperties {
       material1 "wheel"

@@ -69,12 +69,29 @@ def launch_setup(context):
         }],
     )
 
-    footprint_publisher = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_footprint'],
-    )
+    # No base_link -> base_footprint TF: the real LIMO has no base_footprint, and a
+    # config that relies on it (e.g. Nav2 AMCL's default base_frame_id) would work
+    # here but fail on the robot.
+
+    # Camera mount TFs: same frames and chain as the real robot (wego/camera_tilt_launch.py,
+    # degree:=0), but base_link -> camera_mount is set so that camera_link lands on the Webots
+    # camera, i.e. the camera block of the LIMO body mesh: camera_link = (0.096, 0.015, 0.03).
+    # (The robot's own values, (0.2, 0.1, 0.06), would put the camera 7 cm in front of the
+    # bumper and 5 cm to the left of where it is mounted.)
+    camera_mount_tfs = [
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name=name,
+            output='screen',
+            arguments=['--x', x, '--y', y, '--z', z, '--frame-id', parent, '--child-frame-id', child],
+        )
+        for name, x, y, z, parent, child in [
+            ('base_link_to_camera_mount', '0.066', '0.065', '0.03', 'base_link', 'camera_mount'),
+            ('camera_mount_to_roate', '0.0', '0.0', '0.0', 'camera_mount', 'camera_rotate'),
+            ('rotate_to_camera_link', '0.03', '-0.05', '0.0', 'camera_rotate', 'camera_link'),
+        ]
+    ]
 
     # ROS control spawners
     controller_manager_timeout = ['--controller-manager-timeout', '50']
@@ -109,15 +126,8 @@ def launch_setup(context):
         respawn=True
     )
 
-    # Wheel encoders + IMU -> /odom and the odom -> base_link TF. The
-    # controller's own odometry is not used: see limo_odometry.py.
-    odometry = Node(
-        package='webots_ros2_limo',
-        executable='limo_odometry',
-        output='screen',
-        parameters=[{'use_sim_time': use_sim_time, 'kinematics': drive}],
-    )
-    ros_control_spawners.append(odometry)
+    # /odom and the odom -> base_link TF come from the limo_sensors plugin (see
+    # resource/limo.urdf), not from the drive controller's own odometry.
 
     # Optional stacks. Both launch files live in this package and each brings
     # its own RViz, so these shortcut arguments run exactly what the README
@@ -163,7 +173,7 @@ def launch_setup(context):
         webots._supervisor,
 
         robot_state_publisher,
-        footprint_publisher,
+        *camera_mount_tfs,
 
         limo_driver,
         waiting_nodes,

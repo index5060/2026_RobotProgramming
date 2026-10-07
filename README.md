@@ -1,8 +1,6 @@
 # webots_ros2_limo
 
-AgileX **LIMO Pro** (four-wheel differential drive, or mecanum wheels) in
-[Webots](https://cyberbotics.com), driven by `webots_ros2_driver` +
-`ros2_control`, with cartographer SLAM and Nav2 navigation.
+AgileX **LIMO Pro** (four-wheel differential drive, or mecanum wheels) in [Webots](https://cyberbotics.com), driven by `webots_ros2_driver` + `ros2_control`, with cartographer SLAM and Nav2 navigation.
 
 Tested on **Ubuntu 22.04 / ROS 2 Humble / Webots R2025a**.
 
@@ -21,8 +19,7 @@ sudo apt install \
   ros-humble-nav2-bringup
 ```
 
-Webots R2025a must be installed at `/usr/local/webots`
-(or exported via `WEBOTS_HOME` / `ROS2_WEBOTS_HOME`).
+Webots R2025a must be installed at `/usr/local/webots` (or exported via `WEBOTS_HOME` / `ROS2_WEBOTS_HOME`).
 
 ## 2. Clone & Build
 
@@ -41,10 +38,8 @@ source install/local_setup.bash
 ros2 launch webots_ros2_limo robot_launch.py
 ```
 
-This starts Webots with the LIMO robot, the `webots_ros2_driver`, the
-`ros2_control` spawners and `robot_state_publisher`. `limo_odometry` publishes
-`/odom` and the `odom -> base_link` TF, taking distance from the wheel encoders
-and heading from the IMU.
+This starts Webots with the LIMO robot, the `webots_ros2_driver`, the `ros2_control` spawners and `robot_state_publisher`.
+The `limo_sensors` plugin publishes the sensors and `/odom` with the `odom -> base_link` TF, taking distance from the wheel encoders and heading from the IMU.
 
 Drive it with the keyboard:
 
@@ -71,10 +66,10 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard
 
 ## 4. SLAM (cartographer)
 
-Use **two terminals**. Source your workspace in each one.
+Use **two terminals**.
+Source your workspace in each one.
 
-**Terminal 1** — wait until Webots is open and the robot is standing in the
-world before going on:
+**Terminal 1** — wait until Webots is open and the robot is standing in the world before going on:
 
 ```bash
 ros2 launch webots_ros2_limo robot_launch.py
@@ -120,8 +115,8 @@ ros2 launch webots_ros2_limo robot_launch.py
 ros2 launch webots_ros2_limo nav2_launch.py
 ```
 
-In RViz, click **2D Pose Estimate** to set the robot's initial pose, then
-**Nav2 Goal** to send it somewhere. Or from the command line:
+In RViz, click **2D Pose Estimate** to set the robot's initial pose, then **Nav2 Goal** to send it somewhere.
+Or from the command line:
 
 ```bash
 ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
@@ -138,8 +133,7 @@ ros2 action send_goal /navigate_to_pose nav2_msgs/action/NavigateToPose \
 | `use_rviz` | `true` | Open RViz with the Nav2 view |
 | `use_sim_time` | `true` | Use the Webots `/clock` as ROS 2 time |
 
-To navigate with your own map from step 4, run this from the directory where
-you saved it:
+To navigate with your own map from step 4, run this from the directory where you saved it:
 
 ```bash
 ros2 launch webots_ros2_limo nav2_launch.py map:=limo_map.yaml
@@ -149,8 +143,8 @@ ros2 launch webots_ros2_limo nav2_launch.py map:=limo_map.yaml
 
 ## 6. Mecanum Drive
 
-With mecanum wheels the LIMO also moves sideways. Add `drive:=mecanum` to the
-launch commands of steps 3-5; everything else stays the same.
+With mecanum wheels the LIMO also moves sideways.
+Add `drive:=mecanum` to the launch commands of steps 3-5; everything else stays the same.
 
 ```bash
 ros2 launch webots_ros2_limo robot_launch.py drive:=mecanum
@@ -162,8 +156,7 @@ ros2 launch webots_ros2_limo robot_launch.py drive:=mecanum
 ros2 topic pub -r 20 /cmd_vel geometry_msgs/msg/Twist "{linear: {y: 0.1}}"
 ```
 
-In `teleop_twist_keyboard`, hold **Shift** for sideways motion: `J`/`L` strafe
-left/right, `U`/`O`/`M`/`>` move diagonally.
+In `teleop_twist_keyboard`, hold **Shift** for sideways motion: `J`/`L` strafe left/right, `U`/`O`/`M`/`>` move diagonally.
 
 For navigation, start Nav2 with the same drive:
 
@@ -171,8 +164,7 @@ For navigation, start Nav2 with the same drive:
 ros2 launch webots_ros2_limo nav2_launch.py drive:=mecanum
 ```
 
-The robot keeps its heading while it drives and turns to the goal heading only
-after it has arrived:
+The robot keeps its heading while it drives and turns to the goal heading only after it has arrived:
 
 ![Nav2 driving the mecanum LIMO to goals set in RViz without turning on the way (3x speed)](doc/mecanum.gif)
 
@@ -183,30 +175,31 @@ after it has arrived:
 | Nav2 controller | DWB | DWB, holonomic (keeps its heading while driving) |
 | AMCL motion model | differential | omnidirectional |
 
-The mecanum rollers are not modelled geometrically: as in the Webots KUKA youBot,
-each wheel has an asymmetric contact friction rotated by ±45°, defined in
-`worlds/limo_world_mecanum.wbt`.
+The mecanum rollers are not modelled geometrically: as in the Webots KUKA youBot, each wheel has an asymmetric contact friction rotated by ±45°, defined in `worlds/limo_world_mecanum.wbt`.
 
 ---
 
 ## Sensors
 
-Modelled after the real AgileX LIMO Pro:
+The default launch (no SLAM / Nav2, either `drive:=diff` or `drive:=mecanum`) publishes the same sensor interface as the real LIMO running `ros2 launch wego teleop_launch.py`: same topic names, message types, `frame_id`s, rates, QoS and TF frames, measured on the robot.
+Code written against the simulator therefore runs on the robot unchanged.
 
-| Sensor | Model | Sim configuration | Topics |
-|---|---|---|---|
-| 2D LiDAR | YDLIDAR T-mini Pro | 360°, 0.25–12 m, 667 pts/scan, 10 Hz | `/scan`, `/scan/point_cloud` |
-| RGB Camera | Orbbec DaBai Astra Stereo S U3 | 960 × 540 @ 67.9° H | `/LIMO/rgb_camera/image_color`, `/LIMO/rgb_camera/camera_info` |
-| Depth Camera | Orbbec DaBai Astra Stereo S U3 | 640 × 400 @ 67.9° H, 0.3–3 m | `/LIMO/depth_camera/image`, `/LIMO/depth_camera/point_cloud` |
-| IMU | HiPNUC HI226 | `sensor_msgs/Imu`, 20 Hz | `/imu` |
+| Topic | Type | Rate | frame_id | Notes |
+|---|---|---|---|---|
+| `/scan` | `LaserScan` (BEST_EFFORT) | 10 Hz | `laser_link` | YDLIDAR, ±110°, 248 beams, `range_min` 0.01 / `range_max` 64, no return = `0.0` |
+| `/imu` | `Imu` | 100 Hz | `imu_link` | gravity included, same covariances as `limo_base` |
+| `/odom` | `Odometry` | 50 Hz | `odom` → `base_link` | wheel encoders + IMU heading, with the `odom → base_link` TF |
+| `/joint_states` | `JointState` | 25 Hz | `base_link` | real wheel angles (`joint_state_broadcaster`); the robot publishes zeros at 10 Hz |
+| `/camera/color/image_raw` (+`/compressed`) | `Image` rgb8 640×480 | ~30 Hz | `camera_color_optical_frame` | Orbbec DaBai DC1 |
+| `/camera/depth/image_raw` (+`/compressed`, `/compressedDepth`) | `Image` 16UC1 [mm] 640×480 | ~30 Hz | `camera_color_optical_frame` | aligned to color, 0.3–3 m, 0 = no data |
+| `/camera/ir/image_raw` (+`/compressed`) | `Image` mono16 640×400 | ~30 Hz | `camera_color_optical_frame` | |
+| `/camera/{color,depth,ir}/camera_info` | `CameraInfo` | ~30 Hz | `camera_color_optical_frame` | intrinsics copied from the robot |
+| `/camera/depth/points` | `PointCloud2` xyz | ~30 Hz | `camera_color_optical_frame` | |
+| `/camera/depth_registered/points` | `PointCloud2` xyz+rgb | ~30 Hz | `camera_color_optical_frame` | |
 
-`/scan` and `/imu` are remapped to those plain names in `resource/limo.urdf`;
-the camera topics keep the driver's default `/<robot name>/<device>` form.
-Cameras and point clouds are only sampled while something subscribes, so they
-cost nothing when unused.
+> **Note:** The main sensors (LiDAR, IMU, wheel odometry and the depth camera) are simulated as listed above, but some other topics of the real robot are not.
 
-Robot control: `/cmd_vel` in (`linear.x`, `angular.z`; with `drive:=mecanum` also
-`linear.y`), `/odom` and `odom -> base_link` TF out.
+Robot control: `/cmd_vel` in (`linear.x`, `angular.z`; with `drive:=mecanum` also `linear.y`), `/odom` and `odom -> base_link` TF out.
 
 ---
 
@@ -223,7 +216,7 @@ webots_ros2_limo/
 │   ├── LimoMecanum.proto       # same robot with mecanum wheels
 │   └── meshes/                 # limo_base.dae, limo_wheel.dae
 ├── resource/
-│   ├── limo.urdf               # sensor <device> blocks + IMU plugin + ros2_control
+│   ├── limo.urdf               # Webots driver plugins (limo_sensors + ros2_control)
 │   ├── limo_lds_2d.lua         # cartographer config
 │   ├── limo_world_map.{yaml,pgm}
 │   ├── diff/
@@ -233,7 +226,7 @@ webots_ros2_limo/
 │       ├── ros2control.yaml    # mecanum_drive_controller config
 │       └── nav2_params.yaml    # Nav2 parameters (DWB, holonomic)
 ├── webots_ros2_limo/
-│   └── limo_odometry.py        # /odom + odom->base_link TF from encoders + IMU
+│   └── limo_sensors.py         # /scan, /imu, /odom, /camera/* like the real robot
 ├── doc/
 │   └── cartographer.gif, nav2.gif, mecanum.gif
 ├── rviz/

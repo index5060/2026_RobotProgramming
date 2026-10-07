@@ -53,14 +53,15 @@ PROTO LimoFourDiff [
             }
           }
           Lidar {
-            # AgileX LIMO Pro uses the EAI/YDLIDAR T-mini Pro:
-            # 360deg 2D TOF, 0.02-12 m, 0.54deg angular step (~667 pts/scan), 6-12 Hz.
+            # Real LIMO: YDLIDAR (ydlidar_ros2_driver, 10 Hz, 405 beams/turn) cropped by the
+            # driver to +-110 deg = 248 beams. One Webots ray per published beam;
+            # the limo_sensors plugin turns this into the exact /scan of the robot.
             name "laser"
-            fieldOfView 6.283180
-            horizontalResolution 667
+            fieldOfView 3.839724
+            horizontalResolution 248
             numberOfLayers 1
-            near 0.25
-            minRange 0.250000
+            near 0.1
+            minRange 0.1
             maxRange 12.000000
             noise 0.003000
             resolution 0.015000
@@ -81,12 +82,12 @@ PROTO LimoFourDiff [
           ]
         }
       }
-      # Depth camera (Orbbec DaBai Astra Stereo S U3):
-      #   RGB up to 1920x1080 @30fps, Depth up to 1280x800 @30fps
-      #   FoV 67.9 deg H x 45.3 deg V (H FoV = 1.185 rad)
-      #   Depth range 0.3 - 3 m
-      # Native res is heavy for realtime sim; use half-res that keeps the same aspect
-      # (1920x1080 -> 960x540; 1280x800 -> 640x400).
+      # Orbbec DaBai DC1 depth camera (body, collision and mass unchanged). The camera mount
+      # TFs in robot_launch.py put camera_link on the depth/IR lens below.
+      # Color + aligned depth share the color intrinsics (fx = fy = 490.9 px). Each stream is
+      # rendered a bit larger than published and cropped by the limo_sensors plugin so that the
+      # principal point lands where the real camera_info has it (cx 317.5, cy 217.4):
+      #   FOV = 2 * atan(322 / 490.8955) for a 644 px wide render.
       Solid {
         translation 0.084000 0.000000 0.030000
         children [
@@ -100,20 +101,39 @@ PROTO LimoFourDiff [
               size 0.020000 0.060000 0.015000
             }
           }
-          Camera {
-            name "rgb_camera"
-            fieldOfView 1.185
-            width 960
-            height 540
-          }
-          RangeFinder {
-            name "depth_camera"
-            fieldOfView 1.185
-            width 640
-            height 400
-            near 0.300000
-            minRange 0.300000
-            maxRange 3.000000
+          Pose {
+            # Lens positions on the front face of the box (x 0.094 m from base_link).
+            # camera_link (depth/IR lens) = (0.096, 0.015, 0.03) from base_link.
+            translation 0.012000 0.015000 0.000000
+            children [
+              Pose {
+                # camera_color_frame, 3 cm to the right of camera_link (as on the robot)
+                translation 0.000150 -0.030000 0.000020
+                children [
+                  Camera {
+                    name "rgb_camera"
+                    fieldOfView 1.161085
+                    width 644
+                    height 524
+                  }
+                  RangeFinder {
+                    name "depth_camera"
+                    fieldOfView 1.161085
+                    width 644
+                    height 524
+                    near 0.010000
+                    minRange 0.010000
+                    maxRange 3.000000
+                  }
+                ]
+              }
+              Camera {
+                name "ir_camera"
+                fieldOfView 1.161085
+                width 644
+                height 436
+              }
+            ]
           }
         ]
         name "depth_camera_link"
@@ -349,6 +369,7 @@ PROTO LimoFourDiff [
       }
     ]
     name IS name
+    model "LimoFourDiff"  # tells the limo_sensors plugin which wheel kinematics to use
     boundingObject Box {
       size 0.130000 0.120000 0.100000
     }

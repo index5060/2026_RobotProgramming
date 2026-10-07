@@ -26,7 +26,7 @@ WorldInfo {
     "AgileX LIMO with mecanum wheels in the Cyberbotics webots_ros2_turtlebot apartment world."
   ]
   title "ROS2 simulation of the AgileX LIMO robot"
-  basicTimeStep 20
+  basicTimeStep 10
   # Mecanum wheels as asymmetric friction, as in the Webots KUKA youBot world:
   # no friction along the roller axis, friction 2 across it, and that pair of
   # directions rotated by -/+45 degrees for the two diagonal wheel pairs. The

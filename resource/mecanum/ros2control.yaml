@@ -38,7 +38,7 @@ mecanum_drive_controller:
     base_frame_id: "base_link"
     odom_frame_id: "odom"
 
-    # /odom and the odom -> base_link transform come from limo_odometry.py
+    # /odom and the odom -> base_link transform come from limo_sensors.py
     # (wheel encoders + IMU heading), not from this controller.
     enable_odom_tf: false
 
